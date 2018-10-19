@@ -19,8 +19,9 @@ def connect_to_sql():
 # Create the table structure
 def create_tables(cursor, table):
     ## Add your code here. Starter code below
-    cursor.execute('''CREATE TABLE IF NOT EXISTS tablename (id INT PRIMARY KEY); ''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS Jobs (id INT PRIMARY KEY, PostDate DATE, Title TEXT, Location TEXT, Description TEXT, Company TEXT, Apply_info TEXT, Salary FLOAT, RawMessage TEXT); ''')
     return
+
 
 # Query the database.
 # You should not need to edit anything in this function
@@ -31,6 +32,7 @@ def query_sql(cursor, query):
 # Add a new job
 def add_new_job(cursor, jobdetails):
     ## Add your code here
+
     query = "INSERT INTO"
     return query_sql(cursor, query)
 
@@ -48,7 +50,7 @@ def delete_job(cursor, jobdetails):
 # Grab new jobs from a website
 def fetch_new_jobs(arg_dict):
     # Code from https://github.com/RTCedu/CNA336/blob/master/Spring2018/Sql.py
-    query = "https://jobs.github.com/positions.json?" + "location=seattle" # Add arguments here
+    query = "https://jobs.github.com/positions.json?" + "location=" # Add arguments here
     jsonpage = 0
     try:
         contents = urllib.request.urlopen(query)
@@ -75,6 +77,11 @@ def load_config_file(filename):
         file.close()
 
     ## Add in information for argument dictionary
+    file = open(filename, "r")
+    for aline in file:
+        aline = aline.strip()
+        argument_dictionary.append(aline)
+    file.close()
     return argument_dictionary
 
 # Main area of the code.
@@ -101,7 +108,7 @@ def main():
     arg_dict = load_config_file(sys.argv[1])
     while(1):
         jobhunt(arg_dict)
-        time.sleep(3600); # Sleep for 1h
+        time.sleep(3600) # Sleep for 1h
 
 if __name__ == '__main__':
     main()
