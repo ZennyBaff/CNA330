@@ -1,12 +1,41 @@
 # This script pulls from a job website and stores positions into a database. If there is a new posting it notifies the user.
 # CNA 330
 # Zachary Rubin, zrubin@rtc.edu
+import csv
+
 import mysql.connector
 import sys
 import json
 import urllib.request
 import os
 import time
+
+# Load a text-based configuration file
+from mysql.connector import cursor
+
+def load_config_file(filename):
+    argument_dictionary = [0]
+    # Code from https://github.com/RTCedu/CNA336/blob/master/Spring2018/FileIO.py
+    rel_path = os.path.abspath(os.path.dirname(__file__))
+    file = 0
+    file_contents = 0
+    try:
+        file = open(filename, "r")
+        file_contents = file.read()
+    except FileNotFoundError:
+        print("File not found, it will be created.")
+        file = open(filename, "w")
+        file.write("")
+        file.close()
+
+    ## Add in information for argument dictionary
+    file = open(filename, "r")
+    for aline in file:
+        aline = aline.strip()
+        argument_dictionary.append(aline)
+    file.close()
+    return argument_dictionary
+
 
 # Connect to database
 # You should not need to edit anything in this function
@@ -19,7 +48,7 @@ def connect_to_sql():
 # Create the table structure
 def create_tables(cursor, table):
     ## Add your code here. Starter code below
-    cursor.execute('''CREATE TABLE IF NOT EXISTS Jobs (id INT PRIMARY KEY, PostDate DATE, Title TEXT, Location TEXT, Description TEXT, Company TEXT, Apply_info TEXT, Salary FLOAT, RawMessage TEXT); ''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS Jobs (id INT PRIMARY KEY AUTO_INCREMENT, Identifier TEXT, postdate TEXT, title TEXT, location TEXT, description TEXT, company TEXT, apply_info TEXT, salary FLOAT, rawmessage TEXT); ''')
     return
 
 
@@ -48,48 +77,56 @@ def delete_job(cursor, jobdetails):
     return query_sql(cursor, query)
 
 # Grab new jobs from a website
-def fetch_new_jobs(arg_dict):
+def fetch_new_jobs(arg_dict,conn):
     # Code from https://github.com/RTCedu/CNA336/blob/master/Spring2018/Sql.py
-    query = "https://jobs.github.com/positions.json?" + "location=" # Add arguments here
+    query = "https://jobs.github.com/positions.json?description=&location=washington" # Add arguments here
     jsonpage = 0
     try:
         contents = urllib.request.urlopen(query)
         response = contents.read()
         jsonpage = json.loads(response)
+        for page in jsonpage:
+            Identifier = (page['id'])
+            Description = (page['description'])
+            CreatedAt = (page['created_at'])
+            Title = (page['title'])
+            Location = (page['location'])
+            Company = (page['company'])
+            CompanyApply = (page['company_url'])
+            newcursor = conn.cursor()
+            newcursor.execute("INSERT INTO Jobs(Identifier, postdate, title, location, description, company, apply_info) VALUES('" + Identifier + "' ,'" + CreatedAt + "' ,'" + Title + "' ,'" + Location + "' ,'" + Description + "' ,'" + Company + "' ,'" + CompanyApply + "');")
+
+
     except:
         pass
     return jsonpage
 
-# Load a text-based configuration file
-def load_config_file(filename):
-    argument_dictionary = 0
-    # Code from https://github.com/RTCedu/CNA336/blob/master/Spring2018/FileIO.py
-    rel_path = os.path.abspath(os.path.dirname(__file__))
-    file = 0
-    file_contents = 0
-    try:
-        file = open(filename, "r")
-        file_contents = file.read()
-    except FileNotFoundError:
-        print("File not found, it will be created.")
-        file = open(filename, "w")
-        file.write("")
-        file.close()
-
-    ## Add in information for argument dictionary
-    file = open(filename, "r")
-    for aline in file:
-        aline = aline.strip()
-        argument_dictionary.append(aline)
-    file.close()
-    return argument_dictionary
 
 # Main area of the code.
-def jobhunt(arg_dict):
+def jobhunt(arg_dict,conn):
     # Fetch jobs from website
-    jobpage = fetch_new_jobs(arg_dict)
+    fetch_new_jobs(arg_dict,conn)
     # print (jobpage)
     ## Add your code here to parse the job page
+    from bs4 import BeautifulSoup
+    import requests
+
+
+#    web_soup = "c"  # I like soup
+#    r = requests.get(web_soup)
+#    soup = BeautifulSoup(r.text, 'html.parser')
+#    # print(r.text)
+#    # grid-list-container
+#    soup_name = soup.find_all('p')
+#    # print(soup_name)
+#    soup_names = []
+#    for i in range(3, 12):
+#        soup_names.append(soup.find_all('p')[i].get_text())
+#    for i in range(0, len(soup_names)):
+#        soup_names[i] = soup_names[i].replace('\t', '')
+#        soup_names[i] = soup_names[i].replace('\n', '')
+
+
 
     ## Add in your code here to check if the job already exists in the DB
 
@@ -107,7 +144,8 @@ def main():
     # Load text file and store arguments into dictionary
     arg_dict = load_config_file(sys.argv[1])
     while(1):
-        jobhunt(arg_dict)
+        jobhunt(arg_dict,conn)
+        conn.commit()
         time.sleep(3600) # Sleep for 1h
 
 if __name__ == '__main__':
