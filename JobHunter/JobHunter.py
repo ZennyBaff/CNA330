@@ -2,6 +2,8 @@
 # CNA 330
 # Zachary Rubin, zrubin@rtc.edu
 import csv
+#https://stackoverflow.com/questions/44962932/how-to-use-rowcount-in-mysql-using-python
+#http://stackoverflow.max-everyday.com/2017/09/python-mysql-connector-internalerror-unread-result-found/
 
 import mysql.connector
 import sys
@@ -42,7 +44,8 @@ def load_config_file(filename):
 def connect_to_sql():
     conn = mysql.connector.connect(user='root', password='',
                                   host='127.0.0.1',
-                                  database='cna330')
+                                  database='cna330',
+                                    buffered = True)
     return conn
 
 # Create the table structure
@@ -86,15 +89,22 @@ def fetch_new_jobs(arg_dict,conn):
         response = contents.read()
         jsonpage = json.loads(response)
         for page in jsonpage:
-            Identifier = (page['id'])
-            Description = (page['description'])
-            CreatedAt = (page['created_at'])
-            Title = (page['title'])
-            Location = (page['location'])
-            Company = (page['company'])
-            CompanyApply = (page['company_url'])
             newcursor = conn.cursor()
-            newcursor.execute("INSERT INTO Jobs(Identifier, postdate, title, location, description, company, apply_info) VALUES('" + Identifier + "' ,'" + CreatedAt + "' ,'" + Title + "' ,'" + Location + "' ,'" + Description + "' ,'" + Company + "' ,'" + CompanyApply + "');")
+            Identifier = (page['id'])
+            newcursor.execute("SELECT Identifier FROM Jobs WHERE Identifier = '" + Identifier + "';")
+            test = newcursor.rowcount
+            if test != 1:
+                Description = (page['description'])
+                CreatedAt = (page['created_at'])
+                Title = (page['title'])
+                Location = (page['location'])
+                Company = (page['company'])
+                CompanyApply = (page['company_url'])
+                newcursor.execute(
+                    "INSERT INTO Jobs(Identifier, postdate, title, location, description, company, apply_info) VALUES('" + Identifier + "' ,'" + CreatedAt + "' ,'" + Title + "' ,'" + Location + "' ,'" + Description + "' ,'" + Company + "' ,'" + CompanyApply + "');")
+            else:
+                continue
+
 
 
     except:
