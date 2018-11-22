@@ -9,6 +9,7 @@
 #https://www.youtube.com/watch?v=xtgEh48ipAs
 #https://pythonspot.com/matplotlib-bar-chart/
 #https://www.youtube.com/watch?v=LaCjP0uQxzc
+#Zak's Job Hunter Project
 
 import os
 import csv
